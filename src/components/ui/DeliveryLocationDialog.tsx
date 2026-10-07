@@ -1,0 +1,11 @@
+'use client';
+import {useEffect,useState} from 'react';
+import {useStore} from '@/store/useStore';
+import {Dialog} from './Dialog';
+import {Input} from './Input';
+export function useDeliveryLocation(){const location=useStore(s=>s.location);const setLocation=useStore(s=>s.setLocation);useEffect(()=>{try{const value=localStorage.getItem('pincodemart-delivery');if(value){const saved=JSON.parse(value);if(saved.pincode&&/^\d{6}$/.test(saved.pincode))setLocation({pincode:saved.pincode,city:typeof saved.city==='string'?saved.city:null});}}catch{}},[setLocation]);return location;}
+export function DeliveryLocationDialog({open,onClose}:{open:boolean;onClose:()=>void}){const location=useStore(s=>s.location);const setLocation=useStore(s=>s.setLocation);const [pincode,setPincode]=useState('');const [error,setError]=useState('');const [busy,setBusy]=useState(false);
+ const save=()=>{if(!/^\d{6}$/.test(pincode))return;setLocation({pincode,city:null});try{localStorage.setItem('pincodemart-delivery',JSON.stringify({pincode}));}catch{}onClose();};
+ const useCurrent=()=>{setError('');if(!navigator.geolocation){setError('Location is unavailable. Please enter your pincode.');return;}setBusy(true);navigator.geolocation.getCurrentPosition(position=>{setLocation({latitude:position.coords.latitude,longitude:position.coords.longitude,pincode:null,city:null,permissionGranted:true});try{localStorage.removeItem('pincodemart-delivery');}catch{}setBusy(false);onClose();},()=>{setError('Could not get your location. Please enter your pincode.');setBusy(false);},{timeout:10000,maximumAge:300000});};
+ return <Dialog isOpen={open} onClose={onClose} title="Set delivery pincode" className="pincode-dialog"><Input aria-label="6-digit pincode" inputMode="numeric" autoComplete="postal-code" maxLength={6} placeholder={location.pincode||'6-digit pincode'} value={pincode} onChange={e=>setPincode(e.target.value.replace(/\D/g,''))}/><p>Shops with this pincode appear first, followed by nearby areas.</p>{error&&<p role="alert" className="auth-error">{error}</p>}<button className="pincode-use-location" onClick={useCurrent} disabled={busy}>{busy?'Getting location...':'Use current location'}</button><div className="pincode-actions"><button onClick={onClose}>Cancel</button><button onClick={save} disabled={!/^\d{6}$/.test(pincode)||busy}>Show shops</button></div></Dialog>;
+}

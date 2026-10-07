@@ -1,36 +1,118 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# LocalBazaar Web
 
-## Getting Started
+Production-ready Next.js web app for LocalBazaar / PinCode Mart.
 
-First, run the development server:
+## Stack
+
+- Next.js 16 App Router
+- React 19
+- TypeScript
+- Tailwind CSS 4
+- Supabase Auth, Database, Storage, and Edge Functions
+- Razorpay checkout
+
+## Local Setup
 
 ```bash
+npm ci
+cp .env.example .env.local
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000`. If that port is busy, Next will choose another port.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Required Vercel Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Set these in Vercel Project Settings -> Environment Variables:
 
-## Learn More
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_live_or_test_key_id
+NEXT_PUBLIC_APP_URL=https://your-domain.com
+NEXT_PUBLIC_APP_NAME=LocalBazaar
+```
 
-To learn more about Next.js, take a look at the following resources:
+Optional:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```env
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your-google-maps-api-key
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=your-google-client-id
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Do not commit `.env` files. The repo includes `.env.example` only.
 
-## Deploy on Vercel
+## Deploy To Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Use `localbazaar-web` as the Vercel project root.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Vercel settings:
+
+- Framework Preset: `Next.js`
+- Install Command: `npm ci`
+- Build Command: `npm run build`
+- Output Directory: `.next`
+- Node.js: `20.x` or newer
+- Region: `bom1` is configured in `vercel.json`
+
+CLI deployment:
+
+```bash
+cd localbazaar-web
+vercel
+vercel --prod
+```
+
+## Supabase Setup
+
+Run migrations in order from:
+
+```text
+supabase/migrations/
+```
+
+Apply all migrations in filename order. The latest admin/payment fix is:
+
+```text
+013_manual_ad_payment.sql
+```
+
+It accepts admin profiles, fixes the superadmin dashboard counts/queue, supports moderation for every listing type, and keeps merchant payments in the approval flow without blocking on Razorpay.
+
+## Supabase Edge Functions
+
+Deploy payment functions from this folder:
+
+```bash
+supabase functions deploy payment-create-order
+supabase functions deploy payment-verify
+
+Marketplace access uses the database approval flow in `010_manual_marketplace_access.sql` and does not depend on these Edge Functions. Apply the migration before testing merchant access requests.
+```
+
+Set these Supabase function secrets:
+
+```env
+SUPABASE_URL=https://your-project-ref.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+RAZORPAY_KEY_ID=your-razorpay-key-id
+RAZORPAY_KEY_SECRET=your-razorpay-key-secret
+```
+
+## Checks
+
+```bash
+npm run typecheck
+npm run lint
+npm run build
+```
+
+`npm run lint` currently passes with warnings for existing raw `<img>` tags. The production build passes.
+
+## Production URLs
+
+- App health check: `/api/health`
+- Legal page: `/legal`
+- Delete account policy: `/delete-account`
+- Sitemap: `/sitemap.xml`
+- Robots: `/robots.txt`
