@@ -1,7 +1,8 @@
 'use client';
 
 import SettingsScreen from '@/components/settings/SettingsScreen';
+import { AuthGate } from '@/components/auth/AuthGate';
 
 export default function SettingsPage() {
-  return <SettingsScreen />;
+  return <AuthGate><SettingsScreen /></AuthGate>;
 }

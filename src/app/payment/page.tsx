@@ -3,6 +3,7 @@
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import PaymentScreen from '@/components/payment/PaymentScreen';
+import { AuthGate } from '@/components/auth/AuthGate';
 
 function PaymentPageContent() {
   const searchParams = useSearchParams();
@@ -10,7 +11,7 @@ function PaymentPageContent() {
   const adId = searchParams.get('ad_id') || undefined;
   const shopId = searchParams.get('shop_id') || undefined;
   
-  return <PaymentScreen purpose={purpose} adId={adId} shopId={shopId} />;
+  return <AuthGate><PaymentScreen purpose={purpose} adId={adId} shopId={shopId} /></AuthGate>;
 }
 
 export default function PaymentPage() {

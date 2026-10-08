@@ -289,3 +289,11 @@ button:focus-visible,a:focus-visible {outline:2px solid #007eae;outline-offset:3
 
 .my-travel-listings{padding-top:4px;text-align:center;font-size:12px;color:#566775;}.my-travel-listings .grid{text-align:left;}
 @media(min-width:640px){.my-travel-listings{font-size:16px;}}
+
+/* Reel engagement controls and comments. */
+.reel-actions button{position:relative;min-height:40px;width:40px;}
+.reel-actions button span{position:absolute;right:-4px;bottom:-8px;min-width:18px;text-align:center;font-size:9px;line-height:16px;color:#fff;background:#0b2631cc;border-radius:8px;padding:0 3px;}
+.reel-caption p{margin:4px 0 0;}.reel-caption span{display:inline-block;margin-top:4px;color:#bceeff;}
+.reels-loading-more{position:absolute;bottom:120px;left:0;right:0;text-align:center;color:#bceeff;font-size:12px;}
+.reels-inline-error{position:fixed;top:16px;left:16px;right:16px;z-index:20;padding:10px 14px;text-align:center;background:#5a211dcc;color:#ffd8ce;border-radius:12px;font-size:12px;}
+.reel-comments{display:grid;gap:12px;max-height:55vh;overflow:auto;}.reel-comment{padding:10px 12px;border-radius:12px;background:#f2f8fa;}.reel-comment strong{font-size:12px;color:#0b566d;}.reel-comment p{margin:4px 0 0;font-size:13px;color:#31444e;}.reel-comment-form{display:flex;gap:8px;position:sticky;bottom:0;background:#fff;padding-top:8px;}.reel-comment-form input{min-width:0;flex:1;border:1px solid #cbdde2;border-radius:10px;padding:10px;font-size:14px;}.reel-comment-form button{border-radius:10px;background:#007eae;color:#fff;padding:0 14px;}.reel-comment-form button:disabled{opacity:.5;}

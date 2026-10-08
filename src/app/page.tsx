@@ -10,11 +10,23 @@ export default function Home() {
 
   useEffect(() => {
     let isMounted = true;
+    let hasRedirected = false;
+
+    // The root page only decides where to send the user. If Supabase is
+    // unreachable (bad/missing deployment env, DNS, or a transient outage),
+    // do not leave the entire site on an infinite spinner.
+    const redirectToOnboarding = () => {
+      if (!isMounted || hasRedirected) return;
+      hasRedirected = true;
+      router.replace('/auth/onboarding');
+    };
+
+    const timeoutId = window.setTimeout(redirectToOnboarding, 8000);
 
     async function checkSession() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (!isMounted) return;
+        if (!isMounted || hasRedirected) return;
         
         if (session) {
           const requestedRole=sessionStorage.getItem('pincodemart-login-role');
@@ -23,9 +35,10 @@ export default function Home() {
             .select('id, role, onboarding_completed')
             .eq('id', session.user.id)
             .single();
-          if (!isMounted) return;
+          if (!isMounted || hasRedirected) return;
 
           if (profile) {
+            hasRedirected = true;
             if (!profile.onboarding_completed) {
               router.replace('/auth/user-carousel');
             } else if (profile.role === 'admin') {
@@ -36,20 +49,23 @@ export default function Home() {
               router.replace(requestedRole === 'merchant' ? '/merchant/store' : '/home');
             }
           } else {
-            router.replace('/auth/onboarding');
+            redirectToOnboarding();
           }
         } else {
-          router.replace('/auth/onboarding');
+          redirectToOnboarding();
         }
       } catch (error) {
         console.error('Error checking session:', error);
-        if (isMounted) router.replace('/auth/onboarding');
+        redirectToOnboarding();
+      } finally {
+        window.clearTimeout(timeoutId);
       }
     }
 
-    checkSession();
+    void checkSession();
     return () => {
       isMounted = false;
+      window.clearTimeout(timeoutId);
     };
   }, [router]);
 

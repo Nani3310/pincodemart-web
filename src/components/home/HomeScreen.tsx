@@ -130,7 +130,7 @@ const AdvertisementRail = ({
           >
             <div className="relative h-28 sm:h-32">
               {ad.media_type === 'video' ? (
-                <video src={ad.media_url} className="h-full w-full object-cover" muted playsInline />
+                <video src={ad.media_url} className="h-full w-full object-cover" muted playsInline preload="none" />
               ) : (
                 <img src={ad.media_url} alt={ad.title} loading="lazy" onError={handleImageLoadError} className="h-full w-full object-cover" />
               )}

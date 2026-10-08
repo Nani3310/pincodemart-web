@@ -3,15 +3,19 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "node scripts/sync-local-properties-env.mjs",
     "dev": "next dev",
-    "build": "next build",
+    "prebuild": "node scripts/sync-local-properties-env.mjs",
+    "build": "next build --webpack",
     "start": "next start",
+    "prelint": "node scripts/sync-local-properties-env.mjs",
     "lint": "eslint",
+    "pretypecheck": "node scripts/sync-local-properties-env.mjs",
     "typecheck": "tsc --noEmit",
-    "vercel-build": "next build"
+    "vercel-build": "next build --webpack"
   },
   "engines": {
-    "node": ">=20.18.0"
+    "node": ">=22.0.0"
   },
   "dependencies": {
     "@googlemaps/js-api-loader": "^2.1.1",

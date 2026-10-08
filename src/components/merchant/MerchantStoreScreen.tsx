@@ -11,6 +11,7 @@ import { Loading } from '@/components/ui/Loading';
 import { Dialog } from '@/components/ui/Dialog';
 import { Plus, Edit, Star, Package, CreditCard, Gift, Store, Image as ImageIcon, Upload } from 'lucide-react';
 import { MerchantConsoleHeader } from './MerchantConsoleHeader';
+import { ReelPublisher } from '@/components/reels/ReelPublisher';
 import { Shop, Product } from '@/types';
 
 type AdTier = 'tier_1' | 'tier_2' | 'tier_3';
@@ -41,7 +42,9 @@ export default function MerchantStoreScreen() {
   const [products, setProducts] = useState<Product[]>([]);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showPromoteDialog, setShowPromoteDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [selectedTier, setSelectedTier] = useState<AdTier>('tier_1');
   const [promoteError, setPromoteError] = useState('');
   const [promoteMessage, setPromoteMessage] = useState('');
@@ -50,6 +53,9 @@ export default function MerchantStoreScreen() {
   const [productError, setProductError] = useState('');
   const [productMessage, setProductMessage] = useState('');
   const [productSaving, setProductSaving] = useState(false);
+  const [productEditSaving, setProductEditSaving] = useState(false);
+  const [productEditError, setProductEditError] = useState('');
+  const [editFormData, setEditFormData] = useState({ name: '', description: '', price: '', unit: '', stock: '', isListed: false });
   const [formData, setFormData] = useState(emptyProductForm);
   const [productImageFile, setProductImageFile] = useState<File | null>(null);
   const [productImagePreview, setProductImagePreview] = useState('');
@@ -67,7 +73,7 @@ export default function MerchantStoreScreen() {
 
       const { data: shopRows, error: shopError } = await supabase
         .from('shops')
-        .select('id, owner_id, name, slug, description, logo_url, banner_url, shop_photo_url, category_id, theme_id, status, address_line, city, pincode, latitude, longitude, rating_avg, rating_count, delivery_time_mins, is_open, is_paywall_cleared, paywall_valid_until, map_link, opening_hours, social_links, credit_score, referral_code, local_shop_type, created_at, updated_at')
+        .select('id, owner_id, name, slug, description, logo_url, banner_url, shop_photo_url, category_id, theme_id, status, merchant_plan, address_line, city, pincode, latitude, longitude, rating_avg, rating_count, delivery_time_mins, is_open, is_paywall_cleared, paywall_valid_until, map_link, opening_hours, social_links, credit_score, referral_code, local_shop_type, created_at, updated_at')
         .eq('owner_id', user.id)
         .order('created_at', { ascending: false })
         .limit(10);
@@ -200,6 +206,56 @@ export default function MerchantStoreScreen() {
     setProductError('');
     setProductMessage('');
     setShowAddDialog(true);
+  };
+
+  const openEditProductDialog = (product: Product) => {
+    setEditingProduct(product);
+    setProductEditError('');
+    setEditFormData({
+      name: product.name,
+      description: product.description || '',
+      price: String(product.price),
+      unit: product.unit || '',
+      stock: String(product.stock_quantity),
+      isListed: product.is_listed,
+    });
+    setShowEditDialog(true);
+  };
+
+  const closeEditProductDialog = () => {
+    setShowEditDialog(false);
+    setEditingProduct(null);
+    setProductEditError('');
+  };
+
+  const handleEditProduct = async () => {
+    if (!shop || !editingProduct || productEditSaving) return;
+    try {
+      setProductEditError('');
+      const name = editFormData.name.trim();
+      const price = Number(editFormData.price);
+      const stock = Number(editFormData.stock);
+      if (name.length < 2) throw new Error('Product name must be at least 2 characters.');
+      if (!Number.isFinite(price) || price <= 0) throw new Error('Enter a valid product price.');
+      if (!Number.isInteger(stock) || stock < 0) throw new Error('Enter a valid stock quantity.');
+      setProductEditSaving(true);
+      const { error } = await supabase.from('products').update({
+        name,
+        description: editFormData.description.trim() || null,
+        price,
+        unit: editFormData.unit.trim() || null,
+        stock_quantity: stock,
+        is_listed: editFormData.isListed,
+      }).eq('id', editingProduct.id).eq('shop_id', shop.id);
+      if (error) throw error;
+      closeEditProductDialog();
+      setProductMessage('Product details updated.');
+      await loadStoreData();
+    } catch (error) {
+      setProductEditError(error instanceof Error ? error.message : 'Product could not be updated.');
+    } finally {
+      setProductEditSaving(false);
+    }
   };
 
   const closeAddProductDialog = () => {
@@ -474,7 +530,7 @@ export default function MerchantStoreScreen() {
                         size="sm"
                         variant="outline"
                         className="flex-1"
-                        onClick={() => {/* Edit functionality */}}
+                        onClick={() => openEditProductDialog(product)}
                       >
                         <Edit className="w-3 h-3" />
                       </Button>
@@ -492,6 +548,8 @@ export default function MerchantStoreScreen() {
             </div>
           )}
         </div>
+
+        <ReelPublisher shop={shop} products={products} />
 
         {/* FAB for adding products */}
         {shop.status === 'approved' && shop.is_paywall_cleared && (
@@ -610,6 +668,23 @@ export default function MerchantStoreScreen() {
       </Dialog>
 
       {/* Promote Dialog */}
+      <Dialog
+        isOpen={showEditDialog}
+        onClose={closeEditProductDialog}
+        title="Edit Product"
+      >
+        <div className="space-y-4">
+          {productEditError && <p className="rounded-lg border border-primary-accent/35 bg-primary-accent/10 p-3 text-sm text-error">{productEditError}</p>}
+          <Input label="Product Name" value={editFormData.name} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setEditFormData({ ...editFormData, name: event.target.value })} required />
+          <Textarea label="Description" value={editFormData.description} onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => setEditFormData({ ...editFormData, description: event.target.value })} rows={3} />
+          <Input type="number" label="Price (₹)" value={editFormData.price} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setEditFormData({ ...editFormData, price: event.target.value })} required />
+          <Input label="Unit" value={editFormData.unit} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setEditFormData({ ...editFormData, unit: event.target.value })} />
+          <Input type="number" label="Stock Quantity" value={editFormData.stock} onChange={(event: React.ChangeEvent<HTMLInputElement>) => setEditFormData({ ...editFormData, stock: event.target.value })} required />
+          <label className="flex items-start gap-3 rounded-lg border border-border bg-primary-light/30 p-3 text-sm text-text-secondary"><input type="checkbox" checked={editFormData.isListed} onChange={(event) => setEditFormData({ ...editFormData, isListed: event.target.checked })} className="mt-0.5 h-4 w-4 accent-primary" /><span>List this product in the marketplace when it is approved.</span></label>
+          <div className="flex gap-3"><Button variant="outline" onClick={closeEditProductDialog} className="flex-1">Cancel</Button><Button onClick={() => void handleEditProduct()} className="flex-1" disabled={productEditSaving}>{productEditSaving ? 'Saving...' : 'Save changes'}</Button></div>
+        </div>
+      </Dialog>
+
       <Dialog
         isOpen={showPromoteDialog}
         onClose={() => setShowPromoteDialog(false)}

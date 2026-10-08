@@ -9,6 +9,7 @@ import { Loading } from '@/components/ui/Loading';
 import { ArrowLeft, MapPin, Star, Clock, Phone, ExternalLink, MessageCircle, Store, Package } from 'lucide-react';
 import { Shop, Product, ShopTheme } from '@/types';
 import { BottomNav } from '@/components/ui/BottomNav';
+import { normalizeMediaUrl } from '@/lib/utils';
 
 export default function ShopDetailScreen() {
   const router = useRouter();
@@ -19,6 +20,7 @@ export default function ShopDetailScreen() {
   const [shop, setShop] = useState<Shop | null>(null);
   const [theme, setTheme] = useState<ShopTheme | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
+  const [imageIndexes, setImageIndexes] = useState<Record<string, number>>({});
 
   const loadShopData = useCallback(async () => {
     try {
@@ -72,6 +74,17 @@ export default function ShopDetailScreen() {
     background_color: '#F2D49C',
   };
 
+  const imageSources = (values: Array<string | null | undefined>) =>
+    values.map(normalizeMediaUrl).filter((value): value is string => Boolean(value));
+  const bannerSources = imageSources([shop?.banner_url, shop?.shop_photo_url, shop?.logo_url]);
+  const logoSources = imageSources([shop?.logo_url, shop?.shop_photo_url, shop?.banner_url]);
+  const nextImage = (key: string, total: number) => {
+    setImageIndexes((current) => {
+      const next = (current[key] ?? 0) + 1;
+      return next < total ? { ...current, [key]: next } : { ...current, [key]: total };
+    });
+  };
+
   if (loading) {
     return (
       <div className="min-h-dvh app-page-bg flex items-center justify-center">
@@ -107,8 +120,8 @@ export default function ShopDetailScreen() {
           background: `linear-gradient(to bottom, ${colors.primary_color}, ${colors.secondary_color})`,
         }}
       >
-        {shop.banner_url && (
-          <img src={shop.banner_url} alt="Banner" loading="eager" decoding="async" className="w-full h-full object-cover" />
+        {bannerSources[imageIndexes.banner ?? 0] && (
+          <img src={bannerSources[imageIndexes.banner ?? 0]} alt="Banner" loading="eager" decoding="async" className="w-full h-full object-cover" onError={() => nextImage('banner', bannerSources.length)} />
         )}
       </div>
 
@@ -119,8 +132,8 @@ export default function ShopDetailScreen() {
             className="w-20 h-20 sm:w-24 sm:h-24 shrink-0 rounded-full border-4 border-surface shadow-lg flex items-center justify-center"
             style={{ backgroundColor: colors.accent_color }}
           >
-            {shop.logo_url ? (
-              <img src={shop.logo_url} alt={shop.name} loading="eager" decoding="async" className="w-full h-full object-cover rounded-full" />
+            {logoSources[imageIndexes.logo ?? 0] ? (
+              <img src={logoSources[imageIndexes.logo ?? 0]} alt={shop.name} loading="eager" decoding="async" className="w-full h-full object-cover rounded-full" onError={() => nextImage('logo', logoSources.length)} />
             ) : (
               <Store className="w-10 h-10 text-primary-dark" />
             )}
@@ -211,8 +224,8 @@ export default function ShopDetailScreen() {
                   className="cursor-pointer hover:shadow-md transition-shadow"
                 >
                   <div className="aspect-[0.85] bg-primary-light rounded-t-lg flex items-center justify-center">
-                    {product.image_url ? (
-                      <img src={product.image_url} alt={product.name} loading="lazy" decoding="async" className="w-full h-full object-cover rounded-t-lg" />
+                    {imageSources([...(product.media_urls ?? []), product.image_url])[imageIndexes[`product-${product.id}`] ?? 0] ? (
+                      <img src={imageSources([...(product.media_urls ?? []), product.image_url])[imageIndexes[`product-${product.id}`] ?? 0]} alt={product.name} loading="lazy" decoding="async" className="w-full h-full object-cover rounded-t-lg" onError={() => nextImage(`product-${product.id}`, imageSources([...(product.media_urls ?? []), product.image_url]).length)} />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-primary-light rounded-t-lg">
                         <Package className="w-8 h-8 text-primary-dark" />

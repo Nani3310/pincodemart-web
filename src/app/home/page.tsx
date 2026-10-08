@@ -1,7 +1,8 @@
 'use client';
 
 import HomeScreen from '@/components/home/HomeScreen';
+import { AuthGate } from '@/components/auth/AuthGate';
 
 export default function HomePage() {
-  return <HomeScreen />;
+  return <AuthGate><HomeScreen /></AuthGate>;
 }

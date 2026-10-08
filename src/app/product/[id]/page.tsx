@@ -1,7 +1,8 @@
 'use client';
 
 import ProductDetailScreen from '@/components/products/ProductDetailScreen';
+import { AuthGate } from '@/components/auth/AuthGate';
 
 export default function ProductDetailPage() {
-  return <ProductDetailScreen />;
+  return <AuthGate><ProductDetailScreen /></AuthGate>;
 }

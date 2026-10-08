@@ -5,6 +5,18 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+/**
+ * Legacy uploads may still contain http URLs. Browsers block those as mixed
+ * content when the web app is served over HTTPS, so upgrade them before
+ * handing them to an image/video element. Invalid/relative values are left
+ * untouched and are handled by the component's onError fallback.
+ */
+export function normalizeMediaUrl(value: string | null | undefined) {
+  const url = value?.trim();
+  if (!url) return null;
+  return url.replace(/^http:\/\//i, 'https://');
+}
+
 export interface Coordinates {
   latitude: number;
   longitude: number;

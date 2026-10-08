@@ -1,5 +1,6 @@
 import MerchantStoreScreen from '@/components/merchant/MerchantStoreScreen';
+import { AuthGate } from '@/components/auth/AuthGate';
 
 export default function MerchantStorePage() {
-  return <MerchantStoreScreen />;
+  return <AuthGate><MerchantStoreScreen /></AuthGate>;
 }

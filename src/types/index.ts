@@ -57,6 +57,7 @@ export interface Shop {
   category_id: string | null;
   theme_id: string | null;
   status: ShopStatus;
+  merchant_plan?: string | null;
   address_line: string | null;
   city: string | null;
   pincode: string | null;

@@ -15,7 +15,9 @@ Production-ready Next.js web app for LocalBazaar / PinCode Mart.
 
 ```bash
 npm ci
-cp .env.example .env.local
+# When developing beside the Android project, this imports the root
+# local.properties values into the ignored .env.local automatically.
+npm run typecheck
 npm run dev
 ```
 
@@ -23,7 +25,7 @@ Open `http://localhost:3000`. If that port is busy, Next will choose another por
 
 ## Required Vercel Environment Variables
 
-Set these in Vercel Project Settings -> Environment Variables:
+For a deployed build, set these in Vercel Project Settings -> Environment Variables:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
@@ -42,6 +44,14 @@ NEXT_PUBLIC_GOOGLE_CLIENT_ID=your-google-client-id
 
 Do not commit `.env` files. The repo includes `.env.example` only.
 
+## Authentication and reels
+
+`/reels` and `/reel/<reel-id>` are intentionally public so shared links work for signed-out iOS users. Likes and comments still require a Supabase session. Marketplace, shops, product details, travel, services, settings, payments, merchant store, and admin routes are protected by `AuthGate` and redirect to onboarding when signed out.
+
+Reel playback uses the shared `reels_feed_cursor`/`reel_comments_page` RPCs and the R2 `video_url`/`thumbnail_url` values. Merchant publishing uses the existing Supabase Edge Functions `reel-upload-url` and `reel-finalize`: the browser requests a short-lived signed Cloudflare upload URL, uploads the MP4 and generated JPEG cover directly to R2, then finalizes the ticket. Deploy those functions and the Android project's latest reel/media migrations to the same Supabase project used by this web app; the web client does not duplicate service-role credentials.
+
+The Android app reads `WEB_APP_URL` from `local.properties` (default `https://pincodemart.in`) and shares `/reel/<id>` links. Set the same origin in the web deployment and publish Android Digital Asset Links for that host if verified App Links are desired.
+
 ## Deploy To Vercel
 
 Use `localbazaar-web` as the Vercel project root.
@@ -52,7 +62,7 @@ Vercel settings:
 - Install Command: `npm ci`
 - Build Command: `npm run build`
 - Output Directory: `.next`
-- Node.js: `20.x` or newer
+- Node.js: `22.x` or newer
 - Region: `bom1` is configured in `vercel.json`
 
 CLI deployment:
@@ -71,7 +81,7 @@ Run migrations in order from:
 supabase/migrations/
 ```
 
-Apply all migrations in filename order. The latest admin/payment fix is:
+Apply the Android project's migrations in filename order (the web client and Android app must use the same database). The latest admin/payment fix in this web repository is:
 
 ```text
 013_manual_ad_payment.sql

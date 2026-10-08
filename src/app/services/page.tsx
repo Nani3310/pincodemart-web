@@ -1,7 +1,8 @@
 'use client';
 
 import ServicesScreen from '@/components/services/ServicesScreen';
+import { AuthGate } from '@/components/auth/AuthGate';
 
 export default function ServicesPage() {
-  return <ServicesScreen />;
+  return <AuthGate><ServicesScreen /></AuthGate>;
 }
